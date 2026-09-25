@@ -4,16 +4,12 @@ For each target acquisition the model sees two short Sentinel-2 series of the
 annotated pixel: "recent" (last 30 days, including the target date) and "yearly"
 (same season, one year earlier). It works in three steps:
 
-  1. Frame features   each acquisition: 12 bands + NDVI, NDMI, NDWI  (15 numbers)
-                      (optional: MLPs turn them into learned features)
-  2. Statistics       per series: mean and std over time -> one vector for "recent",
-                      one for "yearly"  (optional: one MLP on each)
+  1. Frame features   each acquisition: 12 bands + NDVI, NDMI, NDWI -> MLP -> 32
+                      -> MLP -> 64 numbers
+  2. Statistics       per series: mean and std over time -> one MLP for "recent",
+                      one for "yearly" -> 64 + 64 numbers
   3. Prediction       concatenate -> MLP trunk -> class logits
                       (6 disturbance classes + No Disturbance)
-
-An optional MLP is switched off by setting its output size to null in the config.
-configs/statistical_mlp.yaml uses none of them (statistics of the raw values);
-configs/statistical_mlp_notemporal.yaml uses all of them.
 
 See docs/03_baseline_model.md for a picture.
 """
@@ -29,40 +25,36 @@ class StatisticalMLP(nn.Module):
     def __init__(
         self,
         num_classes: int,
-        frame_dim: int | None = None,
+        frame_dim: int = 32,
         frame_hidden_dims: list[int] = (),
-        stats_mlp_dim: int | None = None,
-        stats_mlp_hidden_dims: list[int] = (),
+        stats_mlp_dim: int = 64,
+        stats_mlp_hidden_dims: list[int] = (64,),
         statistics: list[str] = ("mean", "std"),
-        series_dim: int | None = None,
+        series_dim: int = 64,
         series_hidden_dims: list[int] = (),
-        trunk_dim: int = 64,
-        trunk_hidden_dims: list[int] = (64, 64, 64),
+        trunk_dim: int = 128,
+        trunk_hidden_dims: list[int] = (128,),
         dropout: float = 0.0,
     ) -> None:
         """Args:
         num_classes: Number of output classes.
-        frame_dim, frame_hidden_dims: MLP on each acquisition's 15 values. None = no MLP.
+        frame_dim, frame_hidden_dims: MLP on each acquisition's 15 values.
         stats_mlp_dim, stats_mlp_hidden_dims: A second per-acquisition MLP, right before
-            the statistics. None = no MLP.
+            the statistics.
         statistics: Statistics over time, any of mean, std, min, max.
         series_dim, series_hidden_dims: One MLP on the "recent" statistics and one on the
-            "yearly" statistics. None = no MLP.
+            "yearly" statistics.
         trunk_dim, trunk_hidden_dims: MLP on the concatenated series features.
         dropout: Dropout after every hidden layer.
         """
         super().__init__()
         self.statistics = list(statistics)
         # Step 1: per-acquisition features (12 bands + 3 spectral indices).
-        num_inputs = len(S2_BANDS) + 3
-        self.frame_mlp = _optional_mlp(num_inputs, frame_hidden_dims, frame_dim, dropout)
-        frame_features = num_inputs if frame_dim is None else frame_dim
-        self.stats_mlp = _optional_mlp(
-            frame_features, stats_mlp_hidden_dims, stats_mlp_dim, dropout
-        )
+        self.frame_mlp = MLP(len(S2_BANDS) + 3, list(frame_hidden_dims), frame_dim, dropout)
+        self.stats_mlp = MLP(frame_dim, list(stats_mlp_hidden_dims), stats_mlp_dim, dropout)
         # Step 2: one MLP per series type, after the statistics.
-        self.recent_mlp = _optional_mlp(None, series_hidden_dims, series_dim, dropout)
-        self.yearly_mlp = _optional_mlp(None, series_hidden_dims, series_dim, dropout)
+        self.recent_mlp = MLP(None, list(series_hidden_dims), series_dim, dropout)
+        self.yearly_mlp = MLP(None, list(series_hidden_dims), series_dim, dropout)
         # Step 3: shared trunk, then the classification head (the trunk ends on a Linear,
         # so two Linear layers follow each other: kept as in the benchmark code).
         self.trunk = MLP(None, list(trunk_hidden_dims), trunk_dim, dropout)
@@ -96,15 +88,6 @@ class StatisticalMLP(nn.Module):
         return torch.cat(
             [masked_statistic(frames, series["mask"], name) for name in self.statistics], dim=-1
         )
-
-
-def _optional_mlp(
-    input_dim: int | None, hidden_dims: list[int], output_dim: int | None, dropout: float
-) -> nn.Module:
-    """An MLP, or nothing (identity) when output_dim is None."""
-    if output_dim is None:
-        return nn.Identity()
-    return MLP(input_dim, list(hidden_dims), output_dim, dropout)
 
 
 def spectral_indices(pixels: torch.Tensor, eps: float = 1e-6) -> torch.Tensor:

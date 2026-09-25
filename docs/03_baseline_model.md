@@ -45,27 +45,18 @@ Code: [`models/loss.py`](../forest_disturbance/models/loss.py).
 ![The baseline model](figures/model.png)
 
 `StatisticalMLP` ([`configs/statistical_mlp.yaml`](../configs/statistical_mlp.yaml)): about
-17 k parameters, Sentinel-2 centre pixel only. Each window becomes a mean and a standard
-deviation of its 15 values; an MLP compares the two.
-[`configs/statistical_mlp_notemporal.yaml`](../configs/statistical_mlp_notemporal.yaml) adds
-learned MLPs before and after the statistics (about 58 k parameters); only its `model:`
-section differs. The name comes from the benchmark code.
+58 k parameters, Sentinel-2 centre pixel only. An MLP turns each image into features; each
+window becomes their mean and standard deviation; an MLP compares the two windows.
 
-Fold 0, one run each (10 epochs), operational scores ([metrics](04_metrics.md)):
+Fold 0, one run (10 epochs). Binary F1 = detection, macro F1 = attribution
+([metrics](04_metrics.md)):
 
-| model | horizon | binary P | binary R | binary F1 | macro P | macro R | macro F1 |
-|---|---|---|---|---|---|---|---|
-| `statistical_mlp` | 14 d | 0.10 | 0.08 | 0.09 | 0.16 | 0.04 | 0.05 |
-|  | 30 d | 0.14 | 0.12 | 0.13 | 0.17 | 0.05 | 0.07 |
-|  | 60 d | 0.30 | 0.25 | 0.28 | 0.23 | 0.11 | 0.12 |
-|  | 365 d | 0.65 | 0.55 | 0.60 | 0.52 | 0.35 | 0.36 |
-| `statistical_mlp_notemporal` | 14 d | 0.07 | 0.08 | 0.07 | 0.08 | 0.07 | 0.07 |
-|  | 30 d | 0.13 | 0.14 | 0.13 | 0.11 | 0.10 | 0.10 |
-|  | 60 d | 0.26 | 0.28 | 0.27 | 0.19 | 0.18 | 0.18 |
-|  | 365 d | 0.58 | 0.63 | 0.60 | 0.51 | 0.48 | 0.48 |
-
-P = precision, R = recall. Binary: was the disturbance found? Macro: was its type right,
-averaged over the 6 classes.
+| horizon | binary F1 | macro F1 |
+|---|---|---|
+| 14 days | 0.12 | 0.10 |
+| 30 days | 0.19 | 0.15 |
+| 60 days | 0.34 | 0.28 |
+| 365 days | 0.60 | 0.48 |
 
 ![A clear cut, with the baseline's class probabilities](figures/example_clear_cut.png)
 

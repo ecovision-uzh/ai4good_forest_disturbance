@@ -4,7 +4,6 @@
 
 ```text
 configs/statistical_mlp.yaml   the baseline: every setting of a run
-configs/statistical_mlp_notemporal.yaml   the same model with learned per-image features
 configs/label_mapping.yaml     label codes -> the 7 classes
 scripts/train.py               train + validate; writes predictions and metrics every epoch
 scripts/evaluate.py            recompute metrics from a saved prediction file

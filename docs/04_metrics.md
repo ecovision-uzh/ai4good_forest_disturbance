@@ -19,16 +19,20 @@ A real system decides once, and every alert costs a field visit. So probabilitie
 through a filter, per sample and per class:
 
 ```text
-score = max(0, score + probability − alpha)      on every image date
+vote  = +1 if probability > alpha else −1       on every image date
+score = max(0, score + vote)                    a CUSUM, clipped at zero
 alert when score ≥ threshold, then score = 0
 after an alert: silence for rest_period_days (365)
 ```
 
 ![Operational scoring](figures/metrics_operational.png)
 
-One confident date, or several so-so dates in a row, fire an alert; an isolated spike does
-not. The per-class `alpha` and `threshold` in `evaluation.operational` are fixed: everyone
-reports with them. Tune your own if you like, but always show the fixed-value numbers too.
+Two steps, and both matter. **Thresholding** turns each date into a yes or a no, so how
+confident the model is beyond `alpha` buys it nothing — one spectacular image cannot fire an
+alert on its own. **The CUSUM** then asks for that yes to repeat: a class needs a run of
+confident dates, and a quiet spell wipes out the evidence it had built. The per-class `alpha`
+and `threshold` in `evaluation.operational` are fixed: everyone reports with them. Tune your
+own if you like, but always show the fixed-value numbers too.
 
 Matching, which is where the rules bite:
 
@@ -51,14 +55,16 @@ Matching, which is where the rules bite:
 - Scoring of a sample starts one year after its first image and stops at its first ignored
   label.
 
-The scores, for each horizon H:
+The two scores that matter, for each horizon H (14, 30, 60, 365 days):
 
-| Key | Meaning |
+| Key | What it measures |
 |---|---|
-| `operational/binary_precision_{H}d` | alerts that hit a disturbance, whatever its class |
-| `operational/binary_recall_{H}d` | disturbances that got an alert in time |
-| `operational/binary_f1_{H}d` | both in one number |
-| `operational/macro_{precision,recall,f1}_{H}d` | the same, class by class, averaged over the 6 classes: is the *type* right? |
+| `operational/binary_f1_{H}d` | **detection**: an alert of any class lands on the disturbance |
+| `operational/macro_f1_{H}d` | **attribution**: an alert of the *right* class lands on it, averaged over the 6 classes |
+
+Each F1 combines a precision (share of alerts that are right) and a recall (share of
+disturbances found). Both are logged too, as `…_precision_{H}d` and `…_recall_{H}d`: look at
+them to see *why* an F1 moves.
 
 ## Non-operational: is the signal there?
 
@@ -87,8 +93,8 @@ scores well here.
 
 ## 📌 Which number to report
 
-The operational precision, recall and F1, binary and macro, at each horizon:
-`operational/{binary,macro}_{precision,recall,f1}_{14,30,60,365}d`.
+Binary F1 (detection) and macro F1 (attribution), at the four horizons:
+`operational/binary_f1_{14,30,60,365}d` and `operational/macro_f1_{14,30,60,365}d`.
 
 Four rules: compare models on the same fold and the same settings; fold 0 for exploring,
 five pooled folds for a result; a fold holds few events per class (21 wildfire annotations

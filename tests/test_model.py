@@ -1,4 +1,4 @@
-"""Both baseline configs train on a fake batch, on CPU and (if available) GPU."""
+"""The baseline trains on a fake batch, on CPU and (if available) GPU."""
 
 import pytest
 import torch
@@ -9,11 +9,10 @@ from forest_disturbance.data.batch import collate
 from tests.conftest import DEVICES, REPO, random_example
 
 
-@pytest.mark.parametrize("config_name", ["statistical_mlp", "statistical_mlp_notemporal"])
 @pytest.mark.parametrize("device", DEVICES)
-def test_forward_backward(device, config_name, mapping, monkeypatch):
+def test_forward_backward(device, mapping, monkeypatch):
     monkeypatch.setenv("DISFOR_DATA_ROOT", "unused")
-    config = load_config(REPO / f"configs/{config_name}.yaml")
+    config = load_config(REPO / "configs/statistical_mlp.yaml")
     module = build_module(config, mapping).to(device)
     batch = collate([random_example(label=label, recent=2 + label) for label in [0, 3, 6, 6]])
     batch = module.transfer_batch_to_device(batch, torch.device(device), 0)

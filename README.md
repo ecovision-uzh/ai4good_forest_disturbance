@@ -21,14 +21,20 @@ Run everything from this folder. Stuck? → [Setup](docs/06_setup.md).
 ## 🎯 The baseline to beat
 
 A small MLP on simple statistics of one pixel ([`configs/statistical_mlp.yaml`](configs/statistical_mlp.yaml)),
-trained on fold 0. Its alerts, scored at four horizons ([what these mean](docs/04_metrics.md)):
+trained on fold 0. Two numbers matter:
 
-| horizon | binary precision | binary recall | binary F1 | macro precision | macro recall | macro F1 |
-|---|---|---|---|---|---|---|
-| 14 days | 0.10 | 0.08 | 0.09 | 0.16 | 0.04 | 0.05 |
-| 30 days | 0.14 | 0.12 | 0.13 | 0.17 | 0.05 | 0.07 |
-| 60 days | 0.30 | 0.25 | 0.28 | 0.23 | 0.11 | 0.12 |
-| 365 days | 0.65 | 0.55 | 0.60 | 0.52 | 0.35 | 0.36 |
+- **binary F1** — detection: did an alert land on the disturbance, whatever its class?
+- **macro F1** — attribution: did an alert of the *right* class land on it? Averaged over the 6 classes.
+
+Each is scored at four horizons: how long after a disturbance an alert still counts
+([details](docs/04_metrics.md)).
+
+| horizon | binary F1 | macro F1 |
+|---|---|---|
+| 14 days | 0.12 | 0.10 |
+| 30 days | 0.19 | 0.15 |
+| 60 days | 0.34 | 0.28 |
+| 365 days | 0.60 | 0.48 |
 
 Go beat it.
 
@@ -36,7 +42,7 @@ Go beat it.
 
 | | |
 |---|---|
-| [The problem](docs/01_project.md) | why forests, why satellites, what exactly you predict |
+| [The problem](docs/01_project.md) | why forests, why satellites, what exactly you predict, what to read |
 | [The data](docs/02_dataset.md) | samples, labels, images, folds |
 | [Data to predictions](docs/03_baseline_model.md) | what the loader builds and what the baseline does with it |
 | [Metrics](docs/04_metrics.md) | how results are scored, and which number to quote |

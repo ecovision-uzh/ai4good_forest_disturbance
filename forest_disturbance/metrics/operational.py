@@ -3,10 +3,12 @@
 A real system cannot raise an alarm every time one image looks odd (clouds,
 shadows, noise). So per-date probabilities first go through a filter:
 
-1. CUSUM accumulator, one per sample and disturbance class. For each date:
-       accumulator = max(0, accumulator + (probability - alpha))
-   An alert is sent when accumulator >= threshold. Several days of moderately high
-   probability, or one very high one, are needed.
+1. Threshold, then CUSUM. Every date is first thresholded: the class scores +1 when
+   its probability is above `alpha`, and -1 otherwise. A cumulative sum of those
+   votes is kept per sample and per class, clipped at zero:
+       accumulator = max(0, accumulator + vote)
+   An alert is sent when accumulator >= threshold. A class therefore needs a run of
+   confident dates; a quiet spell erases the evidence it had built up.
 2. Rest period ("cooldown"): after an alert, that class stays silent for
    `rest_period_days`. The accumulator restarts from 0.
 
@@ -65,8 +67,8 @@ def evaluate_operational(
     alpha: dict[str, float],
     threshold: dict[str, float],
     rest_period_days: int = 365,
-    binary_alpha: float = 0.2,
-    binary_threshold: float = 6.0,
+    binary_alpha: float = 0.38,
+    binary_threshold: float = 9.0,
     t_before_days: int = 14,
     t_after_days: int = 365,
     start_offset_years: int = 1,
@@ -78,9 +80,9 @@ def evaluate_operational(
     timeline: zarr_frames.parquet (all sensors): used for the start of monitoring and
         for the previous clear S2 image before each event.
     mapping: Label codes -> class ids.
-    alpha, threshold: CUSUM parameters per disturbance class name.
+    alpha, threshold: filter parameters per disturbance class name.
     rest_period_days: Cooldown after an alert.
-    binary_alpha, binary_threshold: CUSUM parameters of the class-less stream
+    binary_alpha, binary_threshold: filter parameters of the class-less stream
         built from 1 - p(No Disturbance) ("negative_binary").
     t_before_days: Maximum length of the B window before an event.
     t_after_days: How long after an event's end an alert can still match it (the horizon).
@@ -146,13 +148,13 @@ def evaluate_operational(
         .sort("sample_id", "date", maintain_order=True)
     )
 
-    # 4. Class alerts from the CUSUM filter, then matching and metrics.
+    # 4. Class alerts from the filter, then matching and metrics.
     classes = mapping.disturbance_names
     probabilities = (
         predictions.select([probability_column(c) for c in classes]).to_numpy().astype(np.float64)
     )
     assert np.isfinite(probabilities).all() and ((probabilities >= 0) & (probabilities <= 1)).all()
-    alerts = cusum_alerts(predictions, probabilities, classes, alpha, threshold, rest_period_days)
+    alerts = filter_alerts(predictions, probabilities, classes, alpha, threshold, rest_period_days)
     matches = match_alerts(alerts, events, t_after_days)
     result = {
         "binary": _binary_counts(alerts, events, matches),
@@ -181,7 +183,7 @@ def evaluate_operational(
     any_disturbance = (
         1.0 - predictions[probability_column(no_disturbance)].to_numpy().astype(np.float64)[:, None]
     )
-    binary_alerts = cusum_alerts(
+    binary_alerts = filter_alerts(
         predictions,
         any_disturbance,
         [None],
@@ -210,7 +212,7 @@ def evaluate_operational(
     return result
 
 
-def cusum_alerts(
+def filter_alerts(
     predictions: pl.DataFrame,
     probabilities: np.ndarray,
     classes: list[str | None],
@@ -218,7 +220,10 @@ def cusum_alerts(
     threshold: dict,
     rest_period_days: int,
 ) -> list[Alert]:
-    """Run the CUSUM filter. `probabilities` has one column per entry of `classes`.
+    """Run the alert filter. `probabilities` has one column per entry of `classes`.
+
+    Each date votes +1 when the class probability is above its `alpha` and -1 otherwise;
+    the votes are accumulated, clipped at zero, and an alert fires at `threshold`.
 
     Rows are sorted by sample and date. Rows sharing a date (S1 and S2) are added together.
     """
@@ -234,7 +239,7 @@ def cusum_alerts(
     ends = np.append(starts[1:], len(dates))
 
     for k, class_name in enumerate(classes):
-        increments = probabilities[:, k] - alpha[class_name]
+        increments = np.where(probabilities[:, k] > alpha[class_name], 1.0, -1.0)
         accumulator, rest_until, current_sample = 0.0, date.min, None
         for start, end in zip(starts, ends, strict=True):
             sample_id, day = int(sample_ids[start]), dates[start]

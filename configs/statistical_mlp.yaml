@@ -1,6 +1,7 @@
 # Baseline: statistical MLP on the centre-pixel Sentinel-2 time series, fold 0.
-# The model sees only the mean and standard deviation over time of the raw pixel values
-# (12 bands + NDVI, NDMI, NDWI), for the last 30 days and for the same season a year earlier.
+# Each acquisition (12 bands + NDVI, NDMI, NDWI) goes through an MLP; the mean and standard
+# deviation over time of those features summarise the last 30 days and the same season a
+# year earlier; an MLP compares the two summaries.
 #
 # Run:      python scripts/train.py --config configs/statistical_mlp.yaml
 # Override: python scripts/train.py --config configs/statistical_mlp.yaml trainer.max_epochs=2 data.fold=1
@@ -34,16 +35,15 @@ data:
 
 model:
   name: statistical_mlp # which model build.py creates
-  # Each MLP below is switched off by setting its output size to null.
-  frame_dim: null # MLP on each acquisition's 12 bands + NDVI, NDMI, NDWI (null: keep the 15 raw values)
+  frame_dim: 32 # MLP on each acquisition's 12 bands + NDVI, NDMI, NDWI
   frame_hidden_dims: []
-  stats_mlp_dim: null # second per-acquisition MLP, right before mean/std over time
-  stats_mlp_hidden_dims: []
+  stats_mlp_dim: 64 # second per-acquisition MLP, right before mean/std over time
+  stats_mlp_hidden_dims: [64]
   statistics: [mean, std] # computed over time, separately for "recent" and "yearly"
-  series_dim: null # one MLP on the "recent" statistics, one on the "yearly" statistics
+  series_dim: 64 # one MLP on the "recent" statistics, one on the "yearly" statistics
   series_hidden_dims: []
-  trunk_dim: 64 # MLP on the concatenated statistics, then a linear layer -> 7 class scores
-  trunk_hidden_dims: [64, 64, 64]
+  trunk_dim: 128 # MLP on the concatenated series features, then a linear layer -> 7 class scores
+  trunk_hidden_dims: [128]
   dropout: 0.0
 
 loss:
@@ -72,11 +72,11 @@ logger:
 evaluation: # event-level metrics computed after every validation epoch (docs/04_metrics.md)
   horizons_days: [14, 30, 60, 365] # how long after an event an alert still counts
   threshold: 0.5 # non-operational alert: summed disturbance probability >= threshold
-  operational: # CUSUM alert filter - these values are fixed, always report with them
-    alpha: {Clear Cut: 0.05, Thinning: 0.05, Salvage: 0.05, Wildfire: 0.5, Wind: 0.1, Biotic: 0.5}
-    threshold: {Clear Cut: 3.0, Thinning: 3.0, Salvage: 6.0, Wildfire: 3.0, Wind: 3.25, Biotic: 1.8}
+  operational: # threshold + CUSUM alert filter - fixed values, always report with them
+    alpha: {Clear Cut: 0.05, Thinning: 0.05, Salvage: 0.77, Wildfire: 0.86, Wind: 0.2, Biotic: 0.65}
+    threshold: {Clear Cut: 8.0, Thinning: 12.0, Salvage: 1.0, Wildfire: 2.0, Wind: 6.0, Biotic: 5.0}
     rest_period_days: 365
-    binary_alpha: 0.2 # same filter on p(any disturbance) = 1 - p(No Disturbance)
-    binary_threshold: 6.0
+    binary_alpha: 0.38 # same filter on p(any disturbance) = 1 - p(No Disturbance)
+    binary_threshold: 9.0
     t_before_days: 14
     start_offset_years: 1

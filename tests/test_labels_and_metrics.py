@@ -114,11 +114,12 @@ def test_event_metrics_detect_a_clear_cut(mapping):
         threshold=threshold,
         sample_ids=[1],
     )
-    # CUSUM: 0.9-0.5=0.4, +0.45=0.85 >= 0.8 -> one alert on 2020-05-08, then 365 days of rest.
-    assert [a["date"] for a in o["alerts"]] == ["2020-05-08"]
+    # 0.1 is below alpha (-1 vote, clipped at 0), then 0.9 is above it (+1), which already
+    # reaches the threshold -> one alert on 2020-05-03, then 365 days of rest.
+    assert [a["date"] for a in o["alerts"]] == ["2020-05-03"]
     assert o["binary"]["tp"] == 1 and o["binary"]["fp"] == 0
     assert o["per_class"]["Clear Cut"]["f1"] == 1.0
-    assert o["lag"]["median_days"] == 7.0
+    assert o["lag"]["median_days"] == 2.0
 
 
 @pytest.mark.parametrize("alpha", [0.99])
