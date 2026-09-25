@@ -20,15 +20,17 @@ Run everything from this folder. Stuck? → [Setup](docs/06_setup.md).
 
 ## 🎯 The baseline to beat
 
-A small MLP on the greenness of one pixel, trained on fold 0:
+A small MLP on simple statistics of one pixel ([`configs/statistical_mlp.yaml`](configs/statistical_mlp.yaml)),
+trained on fold 0. Its alerts, scored at four horizons ([what these mean](docs/04_metrics.md)):
 
-| | |
-|---|---|
-| disturbances it spots within 60 days (raw predictions) | 67 % |
-| alerts that matched a real disturbance (filtered alerts) | 74 % |
-| median delay between disturbance and alert | 127 days |
+| horizon | binary precision | binary recall | binary F1 | macro precision | macro recall | macro F1 |
+|---|---|---|---|---|---|---|
+| 14 days | 0.10 | 0.08 | 0.09 | 0.16 | 0.04 | 0.05 |
+| 30 days | 0.14 | 0.12 | 0.13 | 0.17 | 0.05 | 0.07 |
+| 60 days | 0.30 | 0.25 | 0.28 | 0.23 | 0.11 | 0.12 |
+| 365 days | 0.65 | 0.55 | 0.60 | 0.52 | 0.35 | 0.36 |
 
-It ignores the radar, the cloud mask, and all 252 × 252 pixels but one. Go beat it.
+Go beat it.
 
 ## 📚 Where to go next
 

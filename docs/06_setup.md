@@ -62,12 +62,23 @@ on a login node.
 
 ## 5. Track your runs
 
-[Weights & Biases](https://wandb.ai) collects every run of the group in one dashboard.
-Create a free account and a team, run `wandb login` once, then set
-`logger.entity=<your-team> logger.project=<name>` in your config.
+Every run gets its own folder, whatever the logger: `runs/<run_name>_<date-time>/`, with the
+exact `config.yaml`, the predictions and metrics of every epoch (`predictions/`) and the last
+checkpoint. Give each experiment a name you will recognise later: `run_name=cloud_mask_v1`.
 
-No internet on the compute nodes? `logger.offline=true`, then `wandb sync runs/<run>/wandb/offline-run-*`
-from the login node. No account at all? `logger.kind=csv`.
+Where the metric curves go is set by `logger.kind`:
+
+| `logger.kind` | Where to look |
+|---|---|
+| `wandb` (default) | the [Weights & Biases](https://wandb.ai) dashboard: every run of your group side by side, with its config |
+| `csv` | `runs/<run>/metrics.csv`, one row per logged step — no account needed |
+| `none` | nothing extra; `predictions/epoch_XXX_metrics.json` is still written |
+
+For W&B: create a free account and a team, run `wandb login` once, then set
+`logger.entity=<your-team> logger.project=<name>`. The W&B run is named like the folder, and
+its config is uploaded, so you can filter and compare runs by any setting. No internet on
+the compute nodes? `logger.offline=true`, then `wandb sync runs/<run>/wandb/offline-run-*`
+from the login node.
 
 ## 6. Look at things
 

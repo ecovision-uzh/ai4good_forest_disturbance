@@ -51,8 +51,21 @@ deviation of its 15 values; an MLP compares the two.
 learned MLPs before and after the statistics (about 58 k parameters); only its `model:`
 section differs. The name comes from the benchmark code.
 
-It does not know which image in a window is the newest, nor when in the year it is: all it
-sees is two summaries. That is the weakest link — start there.
+Fold 0, one run each (10 epochs), operational scores ([metrics](04_metrics.md)):
+
+| model | horizon | binary P | binary R | binary F1 | macro P | macro R | macro F1 |
+|---|---|---|---|---|---|---|---|
+| `statistical_mlp` | 14 d | 0.10 | 0.08 | 0.09 | 0.16 | 0.04 | 0.05 |
+|  | 30 d | 0.14 | 0.12 | 0.13 | 0.17 | 0.05 | 0.07 |
+|  | 60 d | 0.30 | 0.25 | 0.28 | 0.23 | 0.11 | 0.12 |
+|  | 365 d | 0.65 | 0.55 | 0.60 | 0.52 | 0.35 | 0.36 |
+| `statistical_mlp_notemporal` | 14 d | 0.07 | 0.08 | 0.07 | 0.08 | 0.07 | 0.07 |
+|  | 30 d | 0.13 | 0.14 | 0.13 | 0.11 | 0.10 | 0.10 |
+|  | 60 d | 0.26 | 0.28 | 0.27 | 0.19 | 0.18 | 0.18 |
+|  | 365 d | 0.58 | 0.63 | 0.60 | 0.51 | 0.48 | 0.48 |
+
+P = precision, R = recall. Binary: was the disturbance found? Macro: was its type right,
+averaged over the 6 classes.
 
 ![A clear cut, with the baseline's class probabilities](figures/example_clear_cut.png)
 
@@ -69,7 +82,8 @@ runs/statistical_mlp_20260921-1015/
 └── checkpoints/last.ckpt
 ```
 
-The same metrics go to Weights & Biases (or `metrics.csv` with `logger.kind=csv`).
+The same metrics go to Weights & Biases (or `metrics.csv` with `logger.kind=csv`): see
+[Track your runs](06_setup.md#5-track-your-runs).
 
 ## Swap in your own model
 

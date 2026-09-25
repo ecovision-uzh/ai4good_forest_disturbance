@@ -39,15 +39,4 @@ it fades as the forest regrows.
 - Look-alikes. A clear cut, a storm and a salvage cut all end with bare ground.
 - Rare classes. The whole dataset holds 18 distinct fires.
 
-## 💡 Where you can beat the baseline
-
-Easy: use the cloud mask (the baseline feeds cloudy pixels to the model as if they were
-forest); tune the alert filter; handle the class imbalance.
-
-Medium: add Sentinel-1, which sees through clouds; replace "mean and standard deviation
-over time" with a sequence model; predict the date of the event instead of the class only.
-
-Hard: use the 2.5 km image patch instead of one pixel; use a pretrained remote-sensing
-foundation model; design your own alert rule and defend it.
-
 [Docs home](README.md) · next: [The data →](02_dataset.md)
