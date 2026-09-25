@@ -1,0 +1,82 @@
+# Baseline: statistical MLP on the centre-pixel Sentinel-2 time series, fold 0.
+# The model sees only the mean and standard deviation over time of the raw pixel values
+# (12 bands + NDVI, NDMI, NDWI), for the last 30 days and for the same season a year earlier.
+#
+# Run:      python scripts/train.py --config configs/statistical_mlp.yaml
+# Override: python scripts/train.py --config configs/statistical_mlp.yaml trainer.max_epochs=2 data.fold=1
+
+seed: 0
+run_name: statistical_mlp
+output_root: runs # each run writes to runs/<run_name>_<date-time>/
+
+data:
+  root: ${DISFOR_DATA_ROOT} # dataset folder; set once with `export DISFOR_DATA_ROOT=/path/to/data`
+  label_mapping: configs/label_mapping.yaml
+  fold: 0 # cross-validation fold 0-4. Use fold 0 while exploring.
+  sensors: [s2] # sensors given to the model: s1 (radar) and/or s2 (optical)
+  target_sensors: [s2] # acquisition dates that become examples; null = all loaded sensors
+  reader: pixel_cache # pixel_cache: centre pixel only (fast) | zarr: image patches (slow)
+  image_size: 1 # side of the centre crop in 10 m pixels (zarr: up to 252)
+  days_before: 30 # "recent" window: acquisitions in [date - days_before, date]
+  years_context: 1 # number of previous years to look at
+  days_context: 15 # "yearly" window: same date k years earlier +- days_context
+  batch_size: 16
+  num_workers: 8
+  sampling_alpha: 0.5 # oversample rare classes: 0 = off, 1 = all classes equally often
+  normalization: # value -> (value - mean) / std, per band
+    s2: # stored as reflectance x 10000 + 1000  ->  reflectance in [0, 1]
+      # no-data pixels (value 0) are NOT masked: they reach the model as -0.1 reflectance
+      mean: [1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000]
+      std: [10000, 10000, 10000, 10000, 10000, 10000, 10000, 10000, 10000, 10000, 10000, 10000]
+    s1: # stored as dB x 100  ->  dB
+      mean: [0, 0]
+      std: [100, 100]
+
+model:
+  name: statistical_mlp # which model build.py creates
+  # Each MLP below is switched off by setting its output size to null.
+  frame_dim: null # MLP on each acquisition's 12 bands + NDVI, NDMI, NDWI (null: keep the 15 raw values)
+  frame_hidden_dims: []
+  stats_mlp_dim: null # second per-acquisition MLP, right before mean/std over time
+  stats_mlp_hidden_dims: []
+  statistics: [mean, std] # computed over time, separately for "recent" and "yearly"
+  series_dim: null # one MLP on the "recent" statistics, one on the "yearly" statistics
+  series_hidden_dims: []
+  trunk_dim: 64 # MLP on the concatenated statistics, then a linear layer -> 7 class scores
+  trunk_hidden_dims: [64, 64, 64]
+  dropout: 0.0
+
+loss:
+  forget_days: 215 # events older than this are progressively treated as "No Disturbance"
+  transition_days: 30
+
+optimizer:
+  lr: 0.001
+  weight_decay: 0.01
+
+trainer:
+  accelerator: auto # auto | gpu | cpu
+  devices: 1
+  precision: bf16-mixed # use 32 on GPUs without bfloat16 support (e.g. V100, T4)
+  max_epochs: 10
+  limit_train_batches: 1.0 # fraction (or number) of training batches per epoch
+  early_stopping_patience: null # stop after N epochs without improvement of early_stopping_monitor; null = off
+  early_stopping_monitor: non_operational/PR_AUC_60d
+
+logger:
+  kind: wandb # wandb | csv | none
+  project: ai4good-forest-disturbance
+  entity: null # your wandb team or user name
+  offline: false # true: log locally, upload later with `wandb sync`
+
+evaluation: # event-level metrics computed after every validation epoch (docs/04_metrics.md)
+  horizons_days: [14, 30, 60, 365] # how long after an event an alert still counts
+  threshold: 0.5 # non-operational alert: summed disturbance probability >= threshold
+  operational: # CUSUM alert filter - these values are fixed, always report with them
+    alpha: {Clear Cut: 0.05, Thinning: 0.05, Salvage: 0.05, Wildfire: 0.5, Wind: 0.1, Biotic: 0.5}
+    threshold: {Clear Cut: 3.0, Thinning: 3.0, Salvage: 6.0, Wildfire: 3.0, Wind: 3.25, Biotic: 1.8}
+    rest_period_days: 365
+    binary_alpha: 0.2 # same filter on p(any disturbance) = 1 - p(No Disturbance)
+    binary_threshold: 6.0
+    t_before_days: 14
+    start_offset_years: 1

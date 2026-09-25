@@ -1,0 +1,38 @@
+# How raw DISFOR label codes become the classes the model predicts.
+# Full code list: forest_disturbance/data/constants.py and docs/02_dataset.md.
+
+# Disturbance label code -> class id. Several codes can share one class.
+disturbance_classes:
+  211: 0 # Clear Cut
+  212: 1 # Thinning
+  220: 2 # Salvage
+  221: 2 # Salvage after biotic disturbance
+  222: 2 # Salvage after abiotic disturbance
+  242: 3 # Wildfire
+  243: 4 # Wind
+  230: 5 # Biotic
+  231: 5 # Bark beetle
+  232: 5 # Gypsy moth
+
+# The extra class used when there is no (recent) disturbance.
+no_disturbance_id: 6
+
+class_names:
+  0: Clear Cut
+  1: Thinning
+  2: Salvage
+  3: Wildfire
+  4: Wind
+  5: Biotic
+  6: No Disturbance
+
+# Too rare or too vague to learn: the dates they cover are ignored by the loss and metrics.
+ignored_codes:
+  - 200 # Disturbed (agent unknown)
+  - 240 # Abiotic (agent unknown)
+  - 241 # Drought
+  - 245 # Flood
+
+# Removed from the label table (not a forest disturbance).
+filtered_codes:
+  - 213 # Forestry Mulching

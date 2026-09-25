@@ -1,0 +1,55 @@
+[project]
+name = "forest-disturbance"
+version = "0.1.0"
+description = "Student starter code: detect and classify forest disturbances in satellite image time series."
+readme = "README.md"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "torch==2.11.0",
+    "lightning==2.6.5",
+    "torchmetrics==1.9.0",
+    "numpy>=2.0",
+    "polars>=1.30",
+    "pyarrow",
+    "zarr>=3.0",
+    "pyyaml",
+    "matplotlib",
+    "wandb",
+]
+
+[dependency-groups]
+dev = [
+    "pytest",
+    "ruff",
+    "jupyterlab",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["forest_disturbance"]
+
+[tool.uv]
+default-groups = ["dev"]
+
+# PyTorch wheels built for CUDA 12.8. They also run on CPU-only machines.
+[tool.uv.sources]
+torch = [{ index = "pytorch-cu128", marker = "sys_platform == 'linux'" }]
+
+[[tool.uv.index]]
+name = "pytorch-cu128"
+url = "https://download.pytorch.org/whl/cu128"
+explicit = true
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B"]
+ignore = ["E501"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
