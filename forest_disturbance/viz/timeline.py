@@ -32,6 +32,11 @@ from forest_disturbance.data.constants import S1_BANDS
 from forest_disturbance.viz import icons, raster, style
 from forest_disturbance.viz.sample import Sample
 
+#: Colours of the three indices of an "index" strip, in its channel order (red, green, blue).
+#: A series panel showing exactly those indices uses them, so each curve has the colour its
+#: index takes in the pictures above it.
+INDEX_RGB_COLORS = ("#D1263B", "#2E9E44", "#2D63C8")
+
 #: Which strips can be drawn, and their accent colour.
 STRIP_COLORS = {
     "s2": style.S2_COLOR,
@@ -88,7 +93,8 @@ def plot_sample(
         crop: Side of the pictures in 10 m pixels (None = the full 252 px patch).
         patch_dates: Force the dates of the pictures instead of choosing them.
         s2_bands: The three bands making the Sentinel-2 colour image.
-        index_names: The three indices making the "index" strip.
+        index_names: The three indices making the "index" strip (red, green, blue). With
+            that strip shown, a series panel of exactly these indices takes the same colours.
         features: (dates, array) of your own features: (time, channel) for the pixel
             series, or (time, channel, height, width) to also allow a "features" strip.
             More than three channels are reduced to three by PCA.
@@ -149,7 +155,11 @@ def plot_sample(
                 height_points=annotation_height(len(events)) * 72,
             )
         elif kind.startswith("series:"):
-            _draw_series(ax, sample, _names(kind.split(":", 1)[1]), marks=series_marks)
+            names = _names(kind.split(":", 1)[1])
+            colors = None
+            if "index" in patches and set(names) == set(index_names):
+                colors = dict(zip(index_names, INDEX_RGB_COLORS, strict=True))
+            _draw_series(ax, sample, names, marks=series_marks, colors=colors)
         elif kind == "features":
             _draw_feature_series(ax, features, feature_label)
         elif kind == "targets":
@@ -599,7 +609,13 @@ def _benchmark_name(code: int) -> str | None:
     return mapping.class_names[mapping.no_disturbance_id]
 
 
-def _draw_series(ax: plt.Axes, sample: Sample, names: tuple[str, ...], marks: str = "auto") -> None:
+def _draw_series(
+    ax: plt.Axes,
+    sample: Sample,
+    names: tuple[str, ...],
+    marks: str = "auto",
+    colors: dict[str, str] | None = None,
+) -> None:
     """One panel with one or several 1-D series of the annotated pixel.
 
     This is the only series drawing code: a Sentinel-2 band, a spectral index, a
@@ -610,13 +626,14 @@ def _draw_series(ax: plt.Axes, sample: Sample, names: tuple[str, ...], marks: st
     Args:
         marks: "auto" draws dots and a line, and drops the line when the series has
             more than 600 points (radar); "dots" and "line" force one of the two.
+        colors: A colour per name, instead of the default ones.
     """
     units = {
         ("dB" if name in S1_BANDS else "index" if name in raster.INDICES else "reflectance")
         for name in names
     }
     normalize = len(units) > 1
-    colors = _series_colors(names)
+    colors = colors or _series_colors(names)
     for name in names:
         dates, values = sample.series(name)
         if not len(dates):
