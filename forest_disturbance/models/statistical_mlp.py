@@ -11,7 +11,7 @@ annotated pixel: "recent" (last 30 days, including the target date) and "yearly"
   3. Prediction       concatenate -> MLP trunk -> class logits
                       (6 disturbance classes + No Disturbance)
 
-See docs/03_baseline_model.md for a picture.
+See docs/04_model.md for a picture.
 """
 
 import torch

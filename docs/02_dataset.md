@@ -1,6 +1,6 @@
 # 💾 The data
 
-[← The problem](01_project.md) · [Docs home](README.md) · next: [Data to predictions →](03_baseline_model.md)
+[← The problem](01_project.md) · [Docs home](README.md) · next: [Metrics →](03_metrics.md)
 
 | | |
 |---|---|
@@ -106,4 +106,4 @@ annotated 193 times, which is why it looks odd.
   files, compute the metrics once.** Never average five per-fold scores: the folds share
   80 % of their training data, and fold 4 is a different population.
 
-[← The problem](01_project.md) · [Docs home](README.md) · next: [Data to predictions →](03_baseline_model.md)
+[← The problem](01_project.md) · [Docs home](README.md) · next: [Metrics →](03_metrics.md)

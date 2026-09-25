@@ -25,7 +25,7 @@ Each alert is then matched to at most one annotated event:
 Binary metrics ignore the class. Class metrics repeat the matching for each class
 separately (a Wind alert only matches a Wind event). Evaluation of a sample starts
 one year after its first observation (the model needs history) and stops before
-its first ignored label (e.g. drought). See docs/04_metrics.md.
+its first ignored label (e.g. drought). See docs/03_metrics.md.
 """
 
 from bisect import bisect_left

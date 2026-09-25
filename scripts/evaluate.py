@@ -83,7 +83,7 @@ def main() -> None:
             f"{h:>7}d" + "".join(f"{v:>{w}.3f}" for v, w in zip(row, (11, 9, 8) * 2, strict=True))
         )
 
-    print("\nNon-operational (raw predictions, see docs/04_metrics.md)")
+    print("\nNon-operational (raw predictions, a diagnostic)")
     print(f"{'horizon':>8} {'recall':>8} {'precision':>10} {'PR-AUC':>8} {'type F1':>8}")
     for h in evaluation["horizons_days"]:
         row = [

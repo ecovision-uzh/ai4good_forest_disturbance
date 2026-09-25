@@ -27,7 +27,7 @@ trained on fold 0. Two numbers matter:
 - **macro F1** — attribution: did an alert of the *right* class land on it? Averaged over the 6 classes.
 
 Each is scored at four horizons: how long after a disturbance an alert still counts
-([details](docs/04_metrics.md)).
+([details](docs/03_metrics.md)).
 
 | horizon | binary F1 | macro F1 |
 |---|---|---|
@@ -44,7 +44,7 @@ Go beat it.
 |---|---|
 | [The problem](docs/01_project.md) | why forests, why satellites, what exactly you predict, what to read |
 | [The data](docs/02_dataset.md) | samples, labels, images, folds |
-| [Data to predictions](docs/03_baseline_model.md) | what the loader builds and what the baseline does with it |
-| [Metrics](docs/04_metrics.md) | how results are scored, and which number to quote |
+| [Metrics](docs/03_metrics.md) | how alerts are scored, and the numbers to beat |
+| [The model](docs/04_model.md) | what the model reads, the baseline, its loss, from probabilities to alerts |
 | [The code](docs/05_codebase.md) | file map, configs, adding your own model |
 | [Setup](docs/06_setup.md) | install, data, cluster, Weights & Biases |

@@ -57,7 +57,7 @@ def plot_sample(
     features: tuple[list[date], np.ndarray] | None = None,
     feature_label: str = "features",
     annotations: bool = True,
-    observations: bool = True,
+    observations: bool | Sequence[str] = True,
     targets: pl.DataFrame | None = None,
     forget_days: float | None = None,
     predictions: pl.DataFrame | None = None,
@@ -99,7 +99,8 @@ def plot_sample(
             class, and how long ago the event was.
         forget_days: Marks the age at which the loss stops asking for the true class,
             on the `targets` panel.
-        observations: Draw a tick per acquisition under the annotation lane.
+        observations: Draw a tick per acquisition under the annotation lane: True for
+            both sensors, or the sensors to show, e.g. ("s2",).
         predictions: Prediction table of a run (runs/<run>/predictions/epoch_XXX.parquet).
         alerts: Operational alerts, e.g. `evaluate_operational(...)["alerts"]`.
         threshold: Alert threshold drawn as a dotted line in the model panel.
@@ -324,7 +325,7 @@ def _format_time_axis(time_axes: list[plt.Axes]) -> None:
 
 
 def _draw_annotations(
-    ax: plt.Axes, sample: Sample, *, observations: bool, height_points: float
+    ax: plt.Axes, sample: Sample, *, observations: bool | Sequence[str], height_points: float
 ) -> None:
     """The expert's reading of this pixel: periods as ribbons, events as glyphs.
 
@@ -482,8 +483,9 @@ def _draw_annotations(
         style.outlined(label, width=3.5)
 
     if observations:
+        shown = ("s2", "s1") if observations is True else tuple(observations)
         rows = (("s2", tick_row_s2, style.S2_COLOR), ("s1", tick_row_s1, style.S1_COLOR))
-        for sensor, y, color in rows:
+        for sensor, y, color in (row for row in rows if row[0] in shown):
             dates = sample.dates(sensor)
             if not dates:
                 continue

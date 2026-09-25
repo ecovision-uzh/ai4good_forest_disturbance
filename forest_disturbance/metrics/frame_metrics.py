@@ -2,7 +2,7 @@
 
 These are quick to compute and good for monitoring training, but they do not
 say whether *events* are detected in time. For that, see non_operational.py and
-operational.py (docs/04_metrics.md).
+operational.py (docs/03_metrics.md).
 
 Three views of the same predictions (class = argmax of the logits):
 

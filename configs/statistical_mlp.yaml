@@ -69,7 +69,7 @@ logger:
   entity: null # your wandb team or user name
   offline: false # true: log locally, upload later with `wandb sync`
 
-evaluation: # event-level metrics computed after every validation epoch (docs/04_metrics.md)
+evaluation: # event-level metrics computed after every validation epoch (docs/03_metrics.md)
   horizons_days: [14, 30, 60, 365] # how long after an event an alert still counts
   threshold: 0.5 # non-operational alert: summed disturbance probability >= threshold
   operational: # threshold + CUSUM alert filter - fixed values, always report with them

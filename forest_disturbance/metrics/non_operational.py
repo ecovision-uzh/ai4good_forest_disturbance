@@ -26,7 +26,7 @@ Metrics per horizon H (keys end in `_{H}d`):
     window_agent_accuracy  disturbance type from the mean class probabilities over the
     window_agent_f1_macro  window, compared with the true type (ignores detection)
 Plus `detection_rate_1y` and `average_detection_delay_days_1y` (first alert in a 365 d window).
-See docs/04_metrics.md.
+A diagnostic: not documented in docs/, which only cover the operational metrics.
 """
 
 from datetime import date, timedelta

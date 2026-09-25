@@ -1,6 +1,6 @@
 # 🧭 The code
 
-[← Metrics](04_metrics.md) · [Docs home](README.md) · next: [Setup →](06_setup.md)
+[← The model](04_model.md) · [Docs home](README.md) · next: [Setup →](06_setup.md)
 
 ```text
 configs/statistical_mlp.yaml   the baseline: every setting of a run
@@ -70,7 +70,7 @@ key does.
 
 | … | Do this |
 |---|---|
-| try a new model | new file in `models/`, add it to `MODELS` in `build.py`, set `model.name` ([details](03_baseline_model.md#swap-in-your-own-model)) |
+| try a new model | new file in `models/`, add it to `MODELS` in `build.py`, set `model.name` ([details](04_model.md#swap-in-your-own-model)) |
 | use Sentinel-1 too | `data.sensors=[s1,s2]`: the batch gets `inputs["s1"]` (the baseline ignores it, yours does not have to). `data.target_sensors=null` also turns every S1 date into an example — 4× more examples |
 | use the image, not one pixel | `data.reader=zarr data.image_size=32` (slow: it reads the 1.7 TB patches; raise `data.num_workers`) |
 | change the time windows | `data.days_before`, `data.years_context`, `data.days_context` |
@@ -83,4 +83,4 @@ key does.
 | stop training early | `trainer.early_stopping_patience=3` |
 | load a trained model | build the model, run one batch through it (the lazy layers need it), then `load_state_dict` on `checkpoints/last.ckpt` |
 
-[← Metrics](04_metrics.md) · [Docs home](README.md) · next: [Setup →](06_setup.md)
+[← The model](04_model.md) · [Docs home](README.md) · next: [Setup →](06_setup.md)
